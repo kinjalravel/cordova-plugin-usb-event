@@ -20,6 +20,7 @@ final class UsbEventModel {
   static final String PROPERTY_EVENT_KEY_ID = "id";
   static final String PROPERTY_EVENT_KEY_VID = "vendorId";
   static final String PROPERTY_EVENT_KEY_PID = "productId";
+  static final String PROPERTY_EVENT_KEY_SERIAL_NUMBER = "serialNumber";
 //  public static final String PROPERTY_EVENT_KEY_DEVICE_ID = "deviceId";
 //  public static final String PROPERTY_EVENT_KEY_DEVICE_NAME = "deviceName";
 //  public static final String PROPERTY_EVENT_KEY_PROTOCOL = "protocol";
@@ -99,6 +100,7 @@ final class UsbEventModel {
         JSONObject jsonDevice = new JSONObject();
         jsonDevice.put(PROPERTY_EVENT_KEY_VID, device.getVendorId());
         jsonDevice.put(PROPERTY_EVENT_KEY_PID, device.getProductId());
+        jsonDevice.put(PROPERTY_EVENT_KEY_SERIAL_NUMBER, device.getSerialNumber());
 //        jsonDevice.put(PROPERTY_EVENT_KEY_DEVICE_ID, device.getDeviceId());
 //        jsonDevice.put(PROPERTY_EVENT_KEY_DEVICE_NAME, device.getDeviceName());
 //        jsonDevice.put(PROPERTY_EVENT_KEY_PROTOCOL, device.getDeviceProtocol());
