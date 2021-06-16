@@ -13,6 +13,7 @@
     </js-module>
 
     <platform name="android">
+        <framework src="me.jahnen:libaums:0.8.0" type="gradleReference"/>
         <config-file parent="/*" target="res/xml/config.xml">
             <feature name="UsbEvent">
                 <param name="android-package" value="net.kyosho.usb.event.UsbEvent" />
