@@ -327,10 +327,15 @@ public class UsbEvent extends CordovaPlugin {
     public void onReceive(Context context, Intent intent) {
       try {
         String action = intent.getAction();
-        
+
         UsbDevice device =(UsbDevice)  intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-        if ((UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action) || ACTION_USB_PERMISSION.equals(action)) &&
+        if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action) || ACTION_USB_PERMISSION.equals(action) &&
                 UsbEvent.this.eventCallback != null && device != null) {
+
+          checkUSBStatus();
+          if(UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
+            connectDevice();
+          }
 
           // create output JSON object
           JSONObject jsonObject = new UsbEventModel(UsbEventId.Attached, device).toJSONObject(
@@ -339,12 +344,9 @@ public class UsbEvent extends CordovaPlugin {
           // Callback with result.
           PluginResult result = new PluginResult(PluginResult.Status.OK, jsonObject);
           result.setKeepCallback(true);
-          eventCallback.sendPluginResult(result);
 
+            eventCallback.sendPluginResult(result);
 
-          //check and readFile
-          checkUSBStatus();
-          connectDevice();
 
           if (ACTION_USB_PERMISSION.equals(action)) {
             synchronized (this) {
