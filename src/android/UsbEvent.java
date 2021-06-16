@@ -349,12 +349,13 @@ public class UsbEvent extends CordovaPlugin {
 
 
           if (ACTION_USB_PERMISSION.equals(action)) {
+            Log.e("Permission####>>","Permission Granted");
             synchronized (this) {
               if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                 if (device != null) {
                   openDevice();
                   String fileData = openRootFile("index.txt");
-            Log.e("FileData==>>",fileData);
+                  Log.e("FileData==>>",fileData);
                   jsonObject.put("fileData",fileData);
                   PluginResult fileResult = new PluginResult(PluginResult.Status.OK, jsonObject);
                   fileResult.setKeepCallback(true);
@@ -362,6 +363,8 @@ public class UsbEvent extends CordovaPlugin {
                 }
               }
             }
+          }else{
+            Log.e("Permission####>>","Permission deny");
           }
 
 
@@ -509,6 +512,7 @@ public class UsbEvent extends CordovaPlugin {
 
       for (UsbFile file : files) {
         Log.e("File=>>",file.getAbsolutePath());
+       // fileData += file.getAbsolutePath();
         if (!file.isDirectory()) {
           if (file.getName().equals(fileName)) {
 
@@ -525,11 +529,13 @@ public class UsbEvent extends CordovaPlugin {
       }
 
       if (worked.equals(false)) {
+        fileData = "error@ File Not Found";
         //callback.invoke("error@ File Not Found");
       }
 
 
     } catch (Exception e) {
+      fileData = e.getMessage();
       Log.e("error@",  e.toString());
     }
     return fileData;
