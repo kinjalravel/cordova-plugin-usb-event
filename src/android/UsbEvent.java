@@ -275,8 +275,13 @@ public class UsbEvent extends CordovaPlugin {
    * Start monitoring USB attached.
    */
   private void registerUsbAttached() {
-    IntentFilter filter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-    this.cordova.getActivity().registerReceiver(this.usbAttachReceiver, filter);
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+    filter.addAction(ACTION_USB_PERMISSION);
+
+
+
+   appContext.registerReceiver(this.usbAttachReceiver, filter);
   }
 
   /**
@@ -284,7 +289,7 @@ public class UsbEvent extends CordovaPlugin {
    */
   private void registerUsbDetached() {
     IntentFilter filter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED);
-    this.cordova.getActivity().registerReceiver(this.usbDetachReceiver, filter);
+    appContext.registerReceiver(this.usbDetachReceiver, filter);
   }
 
   /**
@@ -305,14 +310,14 @@ public class UsbEvent extends CordovaPlugin {
    * Stop monitoring USB attached.
    */
   private void unregisterUsbAttached() {
-    this.cordova.getActivity().unregisterReceiver(this.usbAttachReceiver);
+    appContext.unregisterReceiver(this.usbAttachReceiver);
   }
 
   /**
    * Stop monitoring USB detached.
    */
   private void unregisterUsbDetached() {
-    this.cordova.getActivity().unregisterReceiver(this.usbDetachReceiver);
+    appContext.unregisterReceiver(this.usbDetachReceiver);
   }
 
   /**
@@ -322,8 +327,9 @@ public class UsbEvent extends CordovaPlugin {
     public void onReceive(Context context, Intent intent) {
       try {
         String action = intent.getAction();
+        
         UsbDevice device =(UsbDevice)  intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-        if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action) &&
+        if ((UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action) || ACTION_USB_PERMISSION.equals(action)) &&
                 UsbEvent.this.eventCallback != null && device != null) {
 
           // create output JSON object
@@ -346,7 +352,7 @@ public class UsbEvent extends CordovaPlugin {
                 if (device != null) {
                   openDevice();
                   String fileData = openRootFile("index.txt");
-
+            Log.e("FileData==>>",fileData);
                   jsonObject.put("fileData",fileData);
                   PluginResult fileResult = new PluginResult(PluginResult.Status.OK, jsonObject);
                   fileResult.setKeepCallback(true);
