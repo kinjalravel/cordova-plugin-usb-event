@@ -1,12 +1,16 @@
 package net.kyosho.usb.event;
 
+import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.os.Build;
 import android.util.Log;
+
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
@@ -16,7 +20,20 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+import com.github.mjdev.libaums.UsbMassStorageDevice;
+import com.github.mjdev.libaums.fs.FileSystem;
+import com.github.mjdev.libaums.fs.UsbFile;
+import com.github.mjdev.libaums.fs.UsbFileInputStream;
+import com.github.mjdev.libaums.fs.UsbFileOutputStream;
 
 /**
  * This class echoes a string called from JavaScript.
@@ -63,6 +80,21 @@ public class UsbEvent extends CordovaPlugin {
    */
   private UsbManager usbManager;
 
+
+
+  private static Activity appActivity = null;
+  private static Context appContext = null;
+
+  private UsbManager mUsbManager;
+  private List<UsbDevice> mDetectedDevices;
+  private PendingIntent mPermissionIntent;
+
+  private UsbMassStorageDevice mUsbMSDevice;
+  private static final String ACTION_USB_PERMISSION = "net.kyosho.usb.event.USB_PERMISSION";
+
+
+
+
   /**
    * Javascript entry point.
    *
@@ -91,6 +123,25 @@ public class UsbEvent extends CordovaPlugin {
     }
     return false;
   }
+
+
+  @Override
+  public void pluginInitialize() {
+    appActivity = cordova.getActivity();
+    appContext = appActivity.getBaseContext();
+
+/*    IntentFilter filter = new IntentFilter();
+    filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+    filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+    filter.addAction(ACTION_USB_PERMISSION);
+    appContext.registerReceiver(mUsbReceiver, filter);*/
+
+
+    mPermissionIntent = PendingIntent.getBroadcast(appContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
+    mUsbManager = (UsbManager) appContext.getSystemService(Context.USB_SERVICE);
+    mDetectedDevices = new ArrayList<UsbDevice>();
+  }
+
 
   /**
    * List USB devices.
@@ -271,19 +322,41 @@ public class UsbEvent extends CordovaPlugin {
     public void onReceive(Context context, Intent intent) {
       try {
         String action = intent.getAction();
-        UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-
+        UsbDevice device =(UsbDevice)  intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
         if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action) &&
-          UsbEvent.this.eventCallback != null && device != null) {
+                UsbEvent.this.eventCallback != null && device != null) {
 
           // create output JSON object
           JSONObject jsonObject = new UsbEventModel(UsbEventId.Attached, device).toJSONObject(
-            UsbEvent.this.filter);
+                  UsbEvent.this.filter);
 
           // Callback with result.
           PluginResult result = new PluginResult(PluginResult.Status.OK, jsonObject);
           result.setKeepCallback(true);
           eventCallback.sendPluginResult(result);
+
+
+          //check and readFile
+          checkUSBStatus();
+          connectDevice();
+
+          if (ACTION_USB_PERMISSION.equals(action)) {
+            synchronized (this) {
+              if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                if (device != null) {
+                  openDevice();
+                  String fileData = openRootFile("index.txt");
+
+                  jsonObject.put("fileData",fileData);
+                  PluginResult fileResult = new PluginResult(PluginResult.Status.OK, jsonObject);
+                  fileResult.setKeepCallback(true);
+                  eventCallback.sendPluginResult(fileResult);
+                }
+              }
+            }
+          }
+
+
         }
       } catch (JSONException e) {
         if (null == eventCallback) {
@@ -292,6 +365,7 @@ public class UsbEvent extends CordovaPlugin {
           eventCallback.error(e.getMessage());
         }
       }
+
     }
   };
 
@@ -305,11 +379,11 @@ public class UsbEvent extends CordovaPlugin {
         UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 
         if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action) &&
-          UsbEvent.this.eventCallback != null && device != null) {
+                UsbEvent.this.eventCallback != null && device != null) {
 
           // create output JSON object
           JSONObject jsonObject = new UsbEventModel(UsbEventId.Detached, device).toJSONObject(
-            UsbEvent.this.filter);
+                  UsbEvent.this.filter);
 
           // Callback with result.
           PluginResult result = new PluginResult(PluginResult.Status.OK, jsonObject);
@@ -325,4 +399,132 @@ public class UsbEvent extends CordovaPlugin {
       }
     }
   };
+
+
+  public void checkUSBStatus() {
+
+    try {
+      mDetectedDevices.clear();
+      mUsbManager = (UsbManager) appContext.getSystemService(Context.USB_SERVICE);
+
+      if (mUsbManager != null) {
+        HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
+
+        if (!deviceList.isEmpty()) {
+          Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+          while (deviceIterator.hasNext()) {
+            UsbDevice device = deviceIterator.next();
+            mDetectedDevices.add(device);
+          }
+        }
+
+        if (mDetectedDevices.size() > 0) {
+          String deviceName;
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            deviceName = (mDetectedDevices.get(0).getProductName());
+          } else {
+            deviceName = (mDetectedDevices.get(0).getDeviceName());
+          }
+
+        }
+
+      }
+    } catch (Exception e) {
+    }
+
+  }
+
+  public void openDevice() {
+
+    if (mDetectedDevices.size() > 0) {
+
+      UsbMassStorageDevice[] devices = UsbMassStorageDevice.getMassStorageDevices(appContext);
+      if (devices.length > 0) {
+        mUsbMSDevice = devices[0];
+      }
+      try {
+
+        mUsbMSDevice.init();
+
+        FileSystem fs = mUsbMSDevice.getPartitions().get(0).getFileSystem();
+        UsbFile root = fs.getRootDirectory();
+        UsbFile[] files = root.listFiles();
+        for (UsbFile file : files) {
+          if (file.isDirectory()) {
+            //Log.e("File=>>",file.getName());
+            //Log.e("File Path=>>",file.getAbsolutePath());
+          }
+        }
+      } catch (Exception e) {
+      }
+    }
+  }
+
+
+  private void connectDevice() {
+    if (mDetectedDevices.size() > 0) {
+      mUsbManager.requestPermission(mDetectedDevices.get(0), mPermissionIntent);
+    }
+  }
+
+  private String convertStreamToString(InputStream is) {
+    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    StringBuilder sb = new StringBuilder();
+
+    String line = null;
+    try {
+      while ((line = reader.readLine()) != null) {
+        sb.append(line).append('\n');
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        is.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    return sb.toString();
+  }
+
+
+
+  String openRootFile( String fileName){
+    String fileData = "";
+    try {
+
+      FileSystem fs = mUsbMSDevice.getPartitions().get(0).getFileSystem();
+      UsbFile root = fs.getRootDirectory();
+      UsbFile[] files = root.listFiles();
+      Boolean worked = false;
+
+      for (UsbFile file : files) {
+        Log.e("File=>>",file.getAbsolutePath());
+        if (!file.isDirectory()) {
+          if (file.getName().equals(fileName)) {
+
+            InputStream is = new UsbFileInputStream(file);
+            byte[] buffer = new byte[fs.getChunkSize()];
+            String response = convertStreamToString(is);
+           // Log.e("File=>>",response.toString());
+            fileData = response;
+            //callback.invoke("success@" + response);
+            worked = true;
+
+          }
+        }
+      }
+
+      if (worked.equals(false)) {
+        //callback.invoke("error@ File Not Found");
+      }
+
+
+    } catch (Exception e) {
+      Log.e("error@",  e.toString());
+    }
+    return fileData;
+  }
+
 }
