@@ -27,3 +27,11 @@ exports.registerEventCallback = function (success, error, options) {
 exports.unregisterEventCallback = function (success, error) {
     exec(success, error, 'UsbEvent', 'unregisterEventCallback', []);
 };
+
+
+/**
+ * root path.
+ */
+ exports.devicesRootPath = function (success, error) {
+    exec(success, error, 'UsbEvent', 'rootPath', []);
+};
