@@ -104,6 +104,7 @@ final class UsbEventModel {
       JSONArray jsonArrayObject = new JSONArray();
 
       for (UsbDevice device : filteredList) {
+         try {
         JSONObject jsonDevice = new JSONObject();
         jsonDevice.put(PROPERTY_EVENT_KEY_VID,device.getVendorId());
         jsonDevice.put(PROPERTY_EVENT_KEY_PID,device.getProductId());
@@ -120,7 +121,8 @@ final class UsbEventModel {
 //        jsonDevice.put(PROPERTY_EVENT_KEY_DEVICE_ID, device.getDeviceId());
 //        jsonDevice.put(PROPERTY_EVENT_KEY_DEVICE_NAME, device.getDeviceName());
 //        jsonDevice.put(PROPERTY_EVENT_KEY_PROTOCOL, device.getDeviceProtocol());
-        jsonArrayObject.put(jsonDevice);
+            jsonArrayObject.put(jsonDevice);
+          }catch (Exception ex){}
       }
       jsonObject.put(PROPERTY_EVENT_KEY_DEVICE_LIST, jsonArrayObject);
     }
