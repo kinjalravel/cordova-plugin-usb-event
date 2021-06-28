@@ -66,6 +66,16 @@ public class UsbEvent extends CordovaPlugin {
   private static final String ACTION_EVENT_UNREGISTER_CALLBACK = "unregisterEventCallback";
 
   /**
+   * Action key for list root path.
+   */
+  private static final String ACTION_ROOT_PATH = "rootPath";
+
+
+  private static final String PATH = "path";
+
+
+
+  /**
    * Registered event callback.
    */
   private CallbackContext eventCallback;
@@ -117,6 +127,9 @@ public class UsbEvent extends CordovaPlugin {
         return true;
       case ACTION_EVENT_UNREGISTER_CALLBACK:
         this.unregisterEventCallback(callbackContext);
+        return true;
+      case ACTION_ROOT_PATH:
+        this.getRootPath(callbackContext,args);
         return true;
       default:
         callbackContext.error(String.format("Unsupported action. (action=%s)", action));
@@ -498,6 +511,31 @@ public class UsbEvent extends CordovaPlugin {
     }
     return sb.toString();
   }
+
+
+  void getRootPath(final CallbackContext callbackContext, final JSONArray args){
+
+    try {
+
+      JSONObject jsonObject = new JSONObject();
+
+      FileSystem fs = mUsbMSDevice.getPartitions().get(0).getFileSystem();
+      UsbFile root = fs.getRootDirectory();
+       jsonObject.put(PATH,root.getAbsolutePath());
+
+      PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, jsonObject);
+      pluginResult.setKeepCallback(false);
+      callbackContext.sendPluginResult(pluginResult);
+    } catch (Exception e) {
+      if (null == callbackContext) {
+        Log.e(TAG, "callbackContext is null.");
+      } else {
+        callbackContext.error(e.getMessage());
+      }
+    }
+  }
+
+
 
 
 
