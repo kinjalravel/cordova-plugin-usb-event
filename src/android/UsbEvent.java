@@ -535,7 +535,6 @@ public class UsbEvent extends CordovaPlugin {
 
 
     } catch (Exception e) {
-      fileData = e.getMessage();
       Log.e("error@",  e.toString());
     }
     try {
