@@ -178,7 +178,33 @@ public class UsbEvent extends CordovaPlugin {
                 return true;
             case ACTION_EVENT_DELETEFILE:
                 if(fileSystem != null){
-                    //     searchDeleteFile();
+
+                    try {
+                        JSONObject option = args.optJSONObject(0);
+                        String fileName = "";
+                        String filePath = "";
+
+                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+
+                        if(filePath.startsWith("/")){
+                            filePath= filePath.replaceFirst("/","");
+                        }
+                        if(filePath.endsWith("/")){
+                            filePath= filePath.substring(0,filePath.length()-1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if(!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchDeleteFile(pathList,fileName, fileSystem.getRootDirectory(), callbackContext);
+                    }catch (Exception ignore){
+                        Log.e("==>>",ignore.getMessage());
+                        sendResponse(getResultJson(false),callbackContext);
+                    }
                 }else {
                     sendResponse(getResultJson(false),callbackContext);
                 }
@@ -226,7 +252,6 @@ public class UsbEvent extends CordovaPlugin {
                         Log.e("==>>",ignore.getMessage());
                         sendResponse(getResultJson(false),callbackContext);
                     }
-                    ;
                 }else {
                     sendResponse(getResultJson(false),callbackContext);
                 }
@@ -709,14 +734,18 @@ public class UsbEvent extends CordovaPlugin {
     void searchDeleteFile(ArrayList<String> filePath, String fileName, UsbFile parentFile,CallbackContext callbackContext) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
+
+                if(!file.isDirectory() &&filePath.isEmpty() && file.getName().equals(fileName)){
+                    if(deleteFile(file)){
+                        sendResponse(getResultJson(true),callbackContext);
+                    }else{
+                        sendResponse(getResultJson(false),callbackContext);
+                    }
+                    return;
+                }
+
                 if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
-                    if(filePath.size() == 1 && !file.isDirectory()){
-                        if(deleteFile(file)){
-                            sendResponse(getResultJson(true),callbackContext);
-                        }else{
-                            sendResponse(getResultJson(false),callbackContext);
-                        }
-                    }else if(filePath.size()>1){
+                    if(filePath.size()>=1){
                         filePath.remove(0);
                         searchDeleteFile(filePath,fileName,file,callbackContext);
                         return;
