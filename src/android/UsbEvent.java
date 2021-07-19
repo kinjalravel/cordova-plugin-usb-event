@@ -79,6 +79,8 @@ public class UsbEvent extends CordovaPlugin {
 
     private static final String ACTION_EVENT_READFILE = "readFileEventCallback";
 
+    private static final String ACTION_EVENT_READFILE_BYTES = "readFileBytesEventCallback";
+
     private static final String ACTION_EVENT_WRITEFILE = "writeFileEventCallback";
 
     private static final String ACTION_EVENT_FILEEXIST = "fileExistFileEventCallback";
@@ -87,6 +89,8 @@ public class UsbEvent extends CordovaPlugin {
     static final String PROPERTY_EVENT_KEY_FILE_PATH = "path";
     static final String PROPERTY_EVENT_KEY_DATA = "data";
     static final String PROPERTY_EVENT_KEY_FILE_NAME = "fileName";
+    static final String PROPERTY_EVENT_KEY_START_BYTES = "startBytes";
+    static final String PROPERTY_EVENT_KEY_TOTAL_BYTES = "totalBytes";
 
     /**
      * Registered event callback.
@@ -232,6 +236,40 @@ public class UsbEvent extends CordovaPlugin {
                         if(!filePath.isEmpty())
                             pathList.addAll(Arrays.asList(filePath.trim().split("/")));
                         searchReadFile(pathList,fileName, fileSystem.getRootDirectory(), callbackContext);
+                    }catch (Exception ignore){
+                        sendResponse(getResultJson(false),callbackContext);
+                    }
+                }else {
+                    sendResponse(getResultJson(false),callbackContext);
+                }
+                return true;
+
+            case ACTION_EVENT_READFILE_BYTES:
+                if(fileSystem != null){
+                    try {
+                        JSONObject option = args.optJSONObject(0);
+                        String fileName = "";
+                        String filePath = "";
+                        int startBytes = 0;
+                        int totalBytes = 0;
+
+                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+
+                        if(filePath.startsWith("/")){
+                            filePath= filePath.replaceFirst("/","");
+                        }
+                        if(filePath.endsWith("/")){
+                            filePath= filePath.substring(0,filePath.length()-1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if(!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchReadFileBytes(pathList,fileName,startBytes,totalBytes, fileSystem.getRootDirectory(), callbackContext);
                     }catch (Exception ignore){
                         sendResponse(getResultJson(false),callbackContext);
                     }
@@ -696,7 +734,6 @@ public class UsbEvent extends CordovaPlugin {
 
                         InputStream is = new UsbFileInputStream(file);
                         byte[] buffer = new byte[fileSystem.getChunkSize()];
-
                         String response = convertStreamToString(is);
                         // Log.e("File=>>",response.toString());
                         fileData = response;
@@ -837,6 +874,37 @@ public class UsbEvent extends CordovaPlugin {
         sendResponse(getResultJson(false),callbackContext);
     }
 
+    //(pathList,fileName, fileSystem.getRootDirectory(), callbackContext);
+
+    void searchReadFileBytes(ArrayList<String> filePath, String fileName,int startBytes,int totalBytes, UsbFile parentFile,CallbackContext callbackContext) {
+        try {
+            for (UsbFile file : parentFile.listFiles()) {
+
+                if(!file.isDirectory() &&filePath.isEmpty() && file.getName().equals(fileName)){
+                    byte[] fileData = readFileBytes(file,startBytes,totalBytes);
+                    if(fileData != null){
+                        JSONObject response = getResultJson(true);
+                        try {
+                            response.put("data", fileData);
+                        }catch (Exception ignore){}
+                        sendResponse(response,callbackContext);
+                    }else{
+                        sendResponse(getResultJson(false),callbackContext);
+                    }
+                    return;
+                }else if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
+                    if(filePath.size()>=1){
+                        filePath.remove(0);
+                        searchReadFileBytes(filePath,fileName,startBytes,totalBytes,file,callbackContext);
+                        return;
+                    }
+                    break;
+                }
+            }
+        }catch (Exception ex){}
+        sendResponse(getResultJson(false),callbackContext);
+    }
+
     void searchWriteFile(ArrayList<String> filePath, String fileName,String data, UsbFile parentFile,CallbackContext callbackContext) {
 
         try {
@@ -885,6 +953,19 @@ public class UsbEvent extends CordovaPlugin {
         sendResponse(getResultJson(false),callbackContext);
     }
 
+    byte[] readFileBytes(UsbFile file,int startBytes, int totalBytes) {
+        try {
+            if (!file.isDirectory()) {
+                InputStream is = new UsbFileInputStream(file);
+                byte[] buffer = new byte[totalBytes];
+
+                is.read(buffer,startBytes,totalBytes);
+                return buffer;
+            }
+        } catch (Exception ex) {
+        }
+        return null;
+    }
 
     String readFile(UsbFile file) {
         try {
