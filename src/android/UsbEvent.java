@@ -628,8 +628,10 @@ public class UsbEvent extends CordovaPlugin {
                         writeFile(newFile, data);
                     }
                     sendResponse(getResultJson(true),callbackContext);
+                    return;
                 }else{
                     sendResponse(getResultJson(false),callbackContext);
+                    return;
                 }
 
             }
@@ -662,6 +664,8 @@ public class UsbEvent extends CordovaPlugin {
                         ArrayList<String> filePathList = new ArrayList<String>();
                         filePathList.add(filePath.get(i));
                         searchCreateFile(filePathList,fileName,data,tmpFile.getParent(),callbackContext);
+                        return;
+
                     }
                 }
             }
@@ -803,7 +807,7 @@ public class UsbEvent extends CordovaPlugin {
     }
 
     UsbFile createFile(UsbFile file, String fileName) {
-        
+
         try{
             for (UsbFile item : file.listFiles()) {
                 if( item.getName().equals(fileName)){
@@ -812,9 +816,9 @@ public class UsbEvent extends CordovaPlugin {
                     }
                 }
             }
-            
+
         }catch (Exception ignore){}
-        
+
         try {
             if (file.isDirectory() && !fileName.trim().isEmpty()) {
                 return file.createFile(fileName);
