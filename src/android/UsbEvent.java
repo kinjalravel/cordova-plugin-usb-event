@@ -241,7 +241,36 @@ public class UsbEvent extends CordovaPlugin {
                 return true;
             case ACTION_EVENT_WRITEFILE:
                 if(fileSystem != null){
-                    //searchWriteFile();
+
+                    try {
+                        JSONObject option = args.optJSONObject(0);
+                        String fileName = "";
+                        String filePath = "";
+                        String fileData = "";
+
+                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_DATA)) {
+                            fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
+                        }
+
+                        if(filePath.startsWith("/")){
+                            filePath= filePath.replaceFirst("/","");
+                        }
+                        if(filePath.endsWith("/")){
+                            filePath= filePath.substring(0,filePath.length()-1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if(!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchWriteFile(pathList,fileName,fileData, fileSystem.getRootDirectory(), callbackContext);
+                    }catch (Exception ignore){
+                        sendResponse(getResultJson(false),callbackContext);
+                    }
                 }else {
                     sendResponse(getResultJson(false),callbackContext);
                 }
@@ -809,17 +838,19 @@ public class UsbEvent extends CordovaPlugin {
     }
 
     void searchWriteFile(ArrayList<String> filePath, String fileName,String data, UsbFile parentFile,CallbackContext callbackContext) {
+
         try {
             for (UsbFile file : parentFile.listFiles()) {
-                if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
-                    if(filePath.size() == 1 && !file.isDirectory()){
-                        if(writeFile(file,data) != null){
-                            sendResponse(getResultJson(true),callbackContext);
-                        }else{
-                            sendResponse(getResultJson(false),callbackContext);
-                        }
 
-                    }else if(filePath.size()>1){
+                if(!file.isDirectory() &&filePath.isEmpty() && file.getName().equals(fileName)){
+                    if(writeFile(file,data) != null){
+                        sendResponse(getResultJson(true),callbackContext);
+                    }else{
+                        sendResponse(getResultJson(false),callbackContext);
+                    }
+                    return;
+                }else if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
+                    if(filePath.size()>=1){
                         filePath.remove(0);
                         searchWriteFile(filePath,fileName,data,file,callbackContext);
                         return;
@@ -829,6 +860,7 @@ public class UsbEvent extends CordovaPlugin {
             }
         }catch (Exception ex){}
         sendResponse(getResultJson(false),callbackContext);
+
     }
 
     void searchFileExist(ArrayList<String> filePath, String fileName, UsbFile parentFile,CallbackContext callbackContext) {
