@@ -6,9 +6,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
+import android.util.Base64;
 import android.util.Log;
 
 
@@ -258,6 +260,12 @@ public class UsbEvent extends CordovaPlugin {
                         }
                         if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
                             filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_START_BYTES)) {
+                            startBytes = option.getInt(PROPERTY_EVENT_KEY_START_BYTES);
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
+                            totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
                         }
 
                         if(filePath.startsWith("/")){
@@ -885,7 +893,8 @@ public class UsbEvent extends CordovaPlugin {
                     if(fileData != null){
                         JSONObject response = getResultJson(true);
                         try {
-                            response.put("data", fileData);
+
+                            response.put("data", Base64.encodeToString(fileData,0));
                         }catch (Exception ignore){}
                         sendResponse(response,callbackContext);
                     }else{
@@ -958,11 +967,13 @@ public class UsbEvent extends CordovaPlugin {
             if (!file.isDirectory()) {
                 InputStream is = new UsbFileInputStream(file);
                 byte[] buffer = new byte[totalBytes];
-
-                is.read(buffer,startBytes,totalBytes);
+                is.skip(startBytes);
+                is.read(buffer);
+                is.close();
                 return buffer;
             }
         } catch (Exception ex) {
+            ex.printStackTrace();
         }
         return null;
     }
@@ -971,7 +982,6 @@ public class UsbEvent extends CordovaPlugin {
         try {
             if (!file.isDirectory()) {
                 InputStream is = new UsbFileInputStream(file);
-                byte[] buffer = new byte[fileSystem.getChunkSize()];
                 String response = convertStreamToString(is);
                 // Log.e("File=>>",response.toString());
                 return response;
@@ -1037,6 +1047,7 @@ public class UsbEvent extends CordovaPlugin {
                 return file;
             }
         } catch (Exception ex) {
+
         }
         return null;
     }
