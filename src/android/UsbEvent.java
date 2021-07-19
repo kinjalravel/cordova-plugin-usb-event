@@ -159,7 +159,10 @@ public class UsbEvent extends CordovaPlugin {
                         }
 
                         if(filePath.startsWith("/")){
-                            filePath.replaceFirst("/","");
+                            filePath= filePath.replaceFirst("/","");
+                        }
+                        if(filePath.endsWith("/")){
+                            filePath= filePath.substring(0,filePath.length()-1);
                         }
                         ArrayList<String> pathList = new ArrayList<String>();
                         if(!filePath.isEmpty())
@@ -647,7 +650,7 @@ public class UsbEvent extends CordovaPlugin {
                             sendResponse(getResultJson(false),callbackContext);
                         }
                         return;
-                    }else if(filePath.size()>1){
+                    }else if(filePath.size()>=1){
                         filePath.remove(0);
                         searchCreateFile(filePath,fileName,data,file,callbackContext);
                         return;
@@ -656,8 +659,8 @@ public class UsbEvent extends CordovaPlugin {
                 }
             }
             UsbFile tmpFile = parentFile;
-            if(filePath.size()>1){
-                for(int i=0;i<filePath.size()-1;i++){
+            if(filePath.size()>=1){
+                for(int i=0;i<filePath.size();i++){
 
                         tmpFile = tmpFile.createDirectory(filePath.get(i));
                     if(i == filePath.size()-1){
