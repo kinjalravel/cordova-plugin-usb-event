@@ -803,6 +803,18 @@ public class UsbEvent extends CordovaPlugin {
     }
 
     UsbFile createFile(UsbFile file, String fileName) {
+        
+        try{
+            for (UsbFile item : file.listFiles()) {
+                if( item.getName().equals(fileName)){
+                    if(!item.isDirectory()){
+                        deleteFile(item);
+                    }
+                }
+            }
+            
+        }catch (Exception ignore){}
+        
         try {
             if (file.isDirectory() && !fileName.trim().isEmpty()) {
                 return file.createFile(fileName);
