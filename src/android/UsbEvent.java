@@ -593,6 +593,7 @@ public class UsbEvent extends CordovaPlugin {
 
                         InputStream is = new UsbFileInputStream(file);
                         byte[] buffer = new byte[fileSystem.getChunkSize()];
+
                         String response = convertStreamToString(is);
                         // Log.e("File=>>",response.toString());
                         fileData = response;
@@ -797,7 +798,7 @@ public class UsbEvent extends CordovaPlugin {
     JSONObject getResultJson(boolean isSuccess){
         JSONObject jsonData = new JSONObject();
         try {
-            jsonData.put("success",isSuccess);
+            jsonData.put("status",isSuccess);
         } catch (Exception e) {
         }
         return jsonData;
