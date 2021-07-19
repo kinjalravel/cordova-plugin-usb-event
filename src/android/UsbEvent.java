@@ -795,12 +795,10 @@ public class UsbEvent extends CordovaPlugin {
                         sendResponse(getResultJson(false),callbackContext);
                     }
                     return;
-                }
-
-                if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
+                }else if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
                     if(filePath.size()>=1){
                         filePath.remove(0);
-                        searchDeleteFile(filePath,fileName,file,callbackContext);
+                        searchReadFile(filePath,fileName,file,callbackContext);
                         return;
                     }
                     break;
