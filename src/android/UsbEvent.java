@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +89,21 @@ public class UsbEvent extends CordovaPlugin {
     private static final String ACTION_EVENT_FILEEXIST = "fileExistFileEventCallback";
 
 
+    private static final String SOCKET_EVENT_IGNITION = "ignition";
+
+    private static final String SOCKET_EVENT_CREATEFILE = "createFile";
+
+    private static final String SOCKET_EVENT_DELETEFILE = "deleteFile";
+
+    private static final String SOCKET_EVENT_READFILE = "readFile";
+
+    private static final String SOCKET_EVENT_READFILE_BYTES = "readFileBytes";
+
+    private static final String SOCKET_EVENT_WRITEFILE = "writeFile";
+
+    private static final String SOCKET_EVENT_FILEEXIST = "fileExist";
+
+
     static final String PROPERTY_EVENT_KEY_FILE_PATH = "path";
     static final String PROPERTY_EVENT_KEY_DATA = "data";
     static final String PROPERTY_EVENT_KEY_FILE_NAME = "fileName";
@@ -130,6 +146,19 @@ public class UsbEvent extends CordovaPlugin {
      * @param callbackContext The callback context used when calling back into JavaScript.
      * @return result.
      */
+
+    private Socket mSocket;
+
+    {
+        try {
+
+            mSocket = IO.socket("http://127.0.0.1:3100/");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
 
@@ -147,107 +176,106 @@ public class UsbEvent extends CordovaPlugin {
                 this.unregisterEventCallback(callbackContext);
                 return true;
             case ACTION_EVENT_CREATEFILE:
-                if(fileSystem != null){
+                if (fileSystem != null) {
                     try {
                         JSONObject option = args.optJSONObject(0);
                         String fileName = "";
                         String filePath = "";
                         String fileData = "";
 
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
                             fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
                             filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_DATA)) {
+                        if (option.has(PROPERTY_EVENT_KEY_DATA)) {
                             fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
                         }
 
-                        if(filePath.startsWith("/")){
-                            filePath= filePath.replaceFirst("/","");
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
                         }
-                        if(filePath.endsWith("/")){
-                            filePath= filePath.substring(0,filePath.length()-1);
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
                         }
                         ArrayList<String> pathList = new ArrayList<String>();
-                        if(!filePath.isEmpty())
-                        pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchCreateFile(pathList,fileName,fileData, fileSystem.getRootDirectory(), callbackContext);
-                    }catch (Exception ignore){
-                        sendResponse(getResultJson(false),callbackContext);
+                        if (!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchCreateFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), callbackContext,filePath,"");
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), callbackContext,"","","");
                     }
-                }else {
-                    sendResponse(getResultJson(false),callbackContext);
+                } else {
+                    sendResponse(getResultJson(false), callbackContext,"","","");
                 }
                 return true;
             case ACTION_EVENT_DELETEFILE:
-                if(fileSystem != null){
-
+                if (fileSystem != null) {
                     try {
                         JSONObject option = args.optJSONObject(0);
                         String fileName = "";
                         String filePath = "";
 
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
                             fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
                             filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
                         }
 
-                        if(filePath.startsWith("/")){
-                            filePath= filePath.replaceFirst("/","");
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
                         }
-                        if(filePath.endsWith("/")){
-                            filePath= filePath.substring(0,filePath.length()-1);
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
                         }
                         ArrayList<String> pathList = new ArrayList<String>();
-                        if(!filePath.isEmpty())
+                        if (!filePath.isEmpty())
                             pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchDeleteFile(pathList,fileName, fileSystem.getRootDirectory(), callbackContext);
-                    }catch (Exception ignore){
-                        sendResponse(getResultJson(false),callbackContext);
+                        searchDeleteFile(pathList, fileName, fileSystem.getRootDirectory(), callbackContext,filePath,"");
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), callbackContext,"","","");
                     }
-                }else {
-                    sendResponse(getResultJson(false),callbackContext);
+                } else {
+                    sendResponse(getResultJson(false), callbackContext,"","","");
                 }
                 return true;
             case ACTION_EVENT_READFILE:
-                if(fileSystem != null){
+                if (fileSystem != null) {
 
                     try {
                         JSONObject option = args.optJSONObject(0);
                         String fileName = "";
                         String filePath = "";
 
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
                             fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
                             filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
                         }
 
-                        if(filePath.startsWith("/")){
-                            filePath= filePath.replaceFirst("/","");
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
                         }
-                        if(filePath.endsWith("/")){
-                            filePath= filePath.substring(0,filePath.length()-1);
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
                         }
                         ArrayList<String> pathList = new ArrayList<String>();
-                        if(!filePath.isEmpty())
+                        if (!filePath.isEmpty())
                             pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchReadFile(pathList,fileName, fileSystem.getRootDirectory(), callbackContext);
-                    }catch (Exception ignore){
-                        sendResponse(getResultJson(false),callbackContext);
+                        searchReadFile(pathList, fileName, fileSystem.getRootDirectory(), callbackContext,filePath,"");
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), callbackContext,"","","");
                     }
-                }else {
-                    sendResponse(getResultJson(false),callbackContext);
+                } else {
+                    sendResponse(getResultJson(false), callbackContext,"","","");
                 }
                 return true;
 
             case ACTION_EVENT_READFILE_BYTES:
-                if(fileSystem != null){
+                if (fileSystem != null) {
                     try {
                         JSONObject option = args.optJSONObject(0);
                         String fileName = "";
@@ -255,38 +283,38 @@ public class UsbEvent extends CordovaPlugin {
                         int startBytes = 0;
                         int totalBytes = 0;
 
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
                             fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
                             filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_START_BYTES)) {
+                        if (option.has(PROPERTY_EVENT_KEY_START_BYTES)) {
                             startBytes = option.getInt(PROPERTY_EVENT_KEY_START_BYTES);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
+                        if (option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
                             totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
                         }
 
-                        if(filePath.startsWith("/")){
-                            filePath= filePath.replaceFirst("/","");
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
                         }
-                        if(filePath.endsWith("/")){
-                            filePath= filePath.substring(0,filePath.length()-1);
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
                         }
                         ArrayList<String> pathList = new ArrayList<String>();
-                        if(!filePath.isEmpty())
+                        if (!filePath.isEmpty())
                             pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchReadFileBytes(pathList,fileName,startBytes,totalBytes, fileSystem.getRootDirectory(), callbackContext);
-                    }catch (Exception ignore){
-                        sendResponse(getResultJson(false),callbackContext);
+                        searchReadFileBytes(pathList, fileName, startBytes, totalBytes, fileSystem.getRootDirectory(), callbackContext,filePath,"");
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), callbackContext,"","","");
                     }
-                }else {
-                    sendResponse(getResultJson(false),callbackContext);
+                } else {
+                    sendResponse(getResultJson(false), callbackContext,"","","");
                 }
                 return true;
             case ACTION_EVENT_WRITEFILE:
-                if(fileSystem != null){
+                if (fileSystem != null) {
 
                     try {
                         JSONObject option = args.optJSONObject(0);
@@ -294,63 +322,63 @@ public class UsbEvent extends CordovaPlugin {
                         String filePath = "";
                         String fileData = "";
 
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
                             fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
                             filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_DATA)) {
+                        if (option.has(PROPERTY_EVENT_KEY_DATA)) {
                             fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
                         }
 
-                        if(filePath.startsWith("/")){
-                            filePath= filePath.replaceFirst("/","");
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
                         }
-                        if(filePath.endsWith("/")){
-                            filePath= filePath.substring(0,filePath.length()-1);
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
                         }
                         ArrayList<String> pathList = new ArrayList<String>();
-                        if(!filePath.isEmpty())
+                        if (!filePath.isEmpty())
                             pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchWriteFile(pathList,fileName,fileData, fileSystem.getRootDirectory(), callbackContext);
-                    }catch (Exception ignore){
-                        sendResponse(getResultJson(false),callbackContext);
+                        searchWriteFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), callbackContext,filePath,"");
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), callbackContext,"","","");
                     }
-                }else {
-                    sendResponse(getResultJson(false),callbackContext);
+                } else {
+                    sendResponse(getResultJson(false), callbackContext,"","","");
                 }
                 return true;
             case ACTION_EVENT_FILEEXIST:
-                if(fileSystem != null){
+                if (fileSystem != null) {
 
                     try {
                         JSONObject option = args.optJSONObject(0);
                         String fileName = "";
                         String filePath = "";
 
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
                             fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
                         }
-                        if(option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
                             filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
                         }
 
-                        if(filePath.startsWith("/")){
-                            filePath= filePath.replaceFirst("/","");
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
                         }
-                        if(filePath.endsWith("/")){
-                            filePath= filePath.substring(0,filePath.length()-1);
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
                         }
                         ArrayList<String> pathList = new ArrayList<String>();
-                        if(!filePath.isEmpty())
+                        if (!filePath.isEmpty())
                             pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchFileExist(pathList,fileName, fileSystem.getRootDirectory(), callbackContext);
-                    }catch (Exception ignore){
-                        sendResponse(getResultJson(false),callbackContext);
+                        searchFileExist(pathList, fileName, fileSystem.getRootDirectory(), callbackContext,filePath,"");
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), callbackContext,"","","");
                     }
-                }else {
-                    sendResponse(getResultJson(false),callbackContext);
+                } else {
+                    sendResponse(getResultJson(false), callbackContext,"","","");
                 }
                 return true;
             default:
@@ -375,6 +403,272 @@ public class UsbEvent extends CordovaPlugin {
         mPermissionIntent = PendingIntent.getBroadcast(appContext, 0, new Intent(ACTION_USB_PERMISSION), 0);
         mUsbManager = (UsbManager) appContext.getSystemService(Context.USB_SERVICE);
         mDetectedDevices = new ArrayList<UsbDevice>();
+
+        setSocketEvents();
+
+    }
+
+    private void setSocketEvents() {
+        mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "chatapp call: connected to server");
+            }
+        });
+
+        mSocket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, " chatapp call: disconnected from the server");
+            }
+        });
+
+        mSocket.on(Socket.EVENT_CONNECT_ERROR, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "chatapp call: connection error");
+            }
+        });
+
+
+
+        mSocket.on(SOCKET_EVENT_CREATEFILE, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (fileSystem != null) {
+                    try {
+                        JSONObject option = (JSONObject) args[0];
+                        String fileName = "";
+                        String filePath = "";
+                        String fileData = "";
+
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_DATA)) {
+                            fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
+                        }
+
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
+                        }
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if (!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchCreateFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_CREATEFILE);
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_CREATEFILE);
+                    }
+                } else {
+                    sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_CREATEFILE);
+                }
+            }
+        });
+
+
+        mSocket.on(SOCKET_EVENT_DELETEFILE, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (fileSystem != null) {
+                    try {
+                        JSONObject option = (JSONObject) args[0];
+                        String fileName = "";
+                        String filePath = "";
+
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
+                        }
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if (!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchDeleteFile(pathList, fileName, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_DELETEFILE);
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_DELETEFILE);
+                    }
+                } else {
+                    sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_DELETEFILE);
+                }
+            }
+        });
+
+
+
+        mSocket.on(SOCKET_EVENT_READFILE, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (fileSystem != null) {
+
+                    try {
+                        JSONObject option = (JSONObject) args[0];
+                        String fileName = "";
+                        String filePath = "";
+
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
+                        }
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if (!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchReadFile(pathList, fileName, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_READFILE);
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_READFILE);
+                    }
+                } else {
+                    sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_READFILE);
+                }
+            }
+        });
+
+
+        mSocket.on(SOCKET_EVENT_READFILE_BYTES, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (fileSystem != null) {
+                    try {
+                        JSONObject option = (JSONObject) args[0];
+                        String fileName = "";
+                        String filePath = "";
+                        int startBytes = 0;
+                        int totalBytes = 0;
+
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_START_BYTES)) {
+                            startBytes = option.getInt(PROPERTY_EVENT_KEY_START_BYTES);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
+                            totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
+                        }
+
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
+                        }
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if (!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchReadFileBytes(pathList, fileName, startBytes, totalBytes, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_READFILE_BYTES);
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_READFILE_BYTES);
+                    }
+                } else {
+                    sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_READFILE_BYTES);
+                }
+            }
+        });
+
+
+        mSocket.on(SOCKET_EVENT_WRITEFILE, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (fileSystem != null) {
+
+                    try {
+                        JSONObject option = (JSONObject) args[0];
+                        String fileName = "";
+                        String filePath = "";
+                        String fileData = "";
+
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_DATA)) {
+                            fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
+                        }
+
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
+                        }
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if (!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchWriteFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_WRITEFILE);
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_WRITEFILE);
+                    }
+                } else {
+                    sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_WRITEFILE);
+                }
+            }
+        });
+
+
+
+        mSocket.on(SOCKET_EVENT_FILEEXIST, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                if (fileSystem != null) {
+
+                    try {
+                        JSONObject option = (JSONObject) args[0];
+                        String fileName = "";
+                        String filePath = "";
+
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                        }
+
+                        if (filePath.startsWith("/")) {
+                            filePath = filePath.replaceFirst("/", "");
+                        }
+                        if (filePath.endsWith("/")) {
+                            filePath = filePath.substring(0, filePath.length() - 1);
+                        }
+                        ArrayList<String> pathList = new ArrayList<String>();
+                        if (!filePath.isEmpty())
+                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                        searchFileExist(pathList, fileName, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_FILEEXIST);
+                    } catch (Exception ignore) {
+                        sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_FILEEXIST);
+                    }
+                } else {
+                    sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_FILEEXIST);
+                }
+            }
+        });
+
+
     }
 
 
@@ -566,6 +860,7 @@ public class UsbEvent extends CordovaPlugin {
                 if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action) || ACTION_USB_PERMISSION.equals(action) &&
                         UsbEvent.this.eventCallback != null && device != null) {
 
+
                     checkUSBStatus();
                     if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                         connectDevice();
@@ -581,8 +876,17 @@ public class UsbEvent extends CordovaPlugin {
 
                     eventCallback.sendPluginResult(result);
 
-
+                    try {
+                        if (!mSocket.connected()) {
+                            mSocket = mSocket.connect();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     if (ACTION_USB_PERMISSION.equals(action)) {
+
+                        mSocket.emit(SOCKET_EVENT_IGNITION, jsonObject);
+
                         synchronized (this) {
                             if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                                 if (device != null) {
@@ -771,51 +1075,51 @@ public class UsbEvent extends CordovaPlugin {
     }
 
 
-    void searchCreateFile(ArrayList<String> filePath, String fileName, String data, UsbFile parentFile,CallbackContext callbackContext) {
+    void searchCreateFile(ArrayList<String> filePathList, String fileName, String data, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
-            if(filePath.isEmpty()){
-                UsbFile newFile =  createFile(fileSystem.getRootDirectory(),fileName);
-                if(newFile != null){
-                    if(data != null) {
+            if (filePathList.isEmpty()) {
+                UsbFile newFile = createFile(fileSystem.getRootDirectory(), fileName);
+                if (newFile != null) {
+                    if (data != null) {
                         writeFile(newFile, data);
                     }
-                    sendResponse(getResultJson(true),callbackContext);
+                    sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
                     return;
-                }else{
-                    sendResponse(getResultJson(false),callbackContext);
+                } else {
+                    sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
                     return;
                 }
 
             }
 
             for (UsbFile file : parentFile.listFiles()) {
-                if(!filePath.isEmpty() && file.isDirectory() && file.getName().equals(filePath.get(0))){
-                    if(filePath.size() == 1){
-                        UsbFile newFile =  createFile(file,fileName);
-                        if(newFile != null){
-                            writeFile(newFile,data);
-                            sendResponse(getResultJson(true),callbackContext);
-                        }else{
-                            sendResponse(getResultJson(false),callbackContext);
+                if (!filePathList.isEmpty() && file.isDirectory() && file.getName().equals(filePathList.get(0))) {
+                    if (filePathList.size() == 1) {
+                        UsbFile newFile = createFile(file, fileName);
+                        if (newFile != null) {
+                            writeFile(newFile, data);
+                            sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
+                        } else {
+                            sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
                         }
                         return;
-                    }else if(filePath.size()>=1){
-                        filePath.remove(0);
-                        searchCreateFile(filePath,fileName,data,file,callbackContext);
+                    } else if (filePathList.size() >= 1) {
+                        filePathList.remove(0);
+                        searchCreateFile(filePathList, fileName, data, file, callbackContext,filePath,socketEvent);
                         return;
                     }
                     break;
                 }
             }
             UsbFile tmpFile = parentFile;
-            if(filePath.size()>=1){
-                for(int i=0;i<filePath.size();i++){
+            if (filePathList.size() >= 1) {
+                for (int i = 0; i < filePathList.size(); i++) {
 
-                        tmpFile = tmpFile.createDirectory(filePath.get(i));
-                    if(i == filePath.size()-1){
-                        ArrayList<String> filePathList = new ArrayList<String>();
-                        filePathList.add(filePath.get(i));
-                        searchCreateFile(filePathList,fileName,data,tmpFile.getParent(),callbackContext);
+                    tmpFile = tmpFile.createDirectory(filePathList.get(i));
+                    if (i == filePathList.size() - 1) {
+                        ArrayList<String> tmpFilePathList = new ArrayList<String>();
+                        tmpFilePathList.add(filePathList.get(i));
+                        searchCreateFile(tmpFilePathList, fileName, data, tmpFile.getParent(), callbackContext,filePath,socketEvent);
                         return;
 
                     }
@@ -823,146 +1127,155 @@ public class UsbEvent extends CordovaPlugin {
             }
 
 
-        }catch (Exception ex){}
-        sendResponse(getResultJson(false),callbackContext);
+        } catch (Exception ex) {
+        }
+        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
-    void searchDeleteFile(ArrayList<String> filePath, String fileName, UsbFile parentFile,CallbackContext callbackContext) {
+    void searchDeleteFile(ArrayList<String> filePathList, String fileName, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
 
-                if(!file.isDirectory() &&filePath.isEmpty() && file.getName().equals(fileName)){
-                    if(deleteFile(file)){
-                        sendResponse(getResultJson(true),callbackContext);
-                    }else{
-                        sendResponse(getResultJson(false),callbackContext);
+                if (!file.isDirectory() && filePathList.isEmpty() && file.getName().equals(fileName)) {
+                    if (deleteFile(file)) {
+                        sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
+                    } else {
+                        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
                     }
                     return;
                 }
 
-                if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
-                    if(filePath.size()>=1){
-                        filePath.remove(0);
-                        searchDeleteFile(filePath,fileName,file,callbackContext);
+                if (!filePathList.isEmpty() && file.getName().equals(filePathList.get(0))) {
+                    if (filePathList.size() >= 1) {
+                        filePathList.remove(0);
+                        searchDeleteFile(filePathList, fileName, file, callbackContext,filePath,socketEvent);
                         return;
                     }
                     break;
                 }
             }
-        }catch (Exception ex){}
-        sendResponse(getResultJson(false),callbackContext);
+        } catch (Exception ex) {
+        }
+        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
-    void searchReadFile(ArrayList<String> filePath, String fileName, UsbFile parentFile,CallbackContext callbackContext) {
+    void searchReadFile(ArrayList<String> filePathList, String fileName, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
 
-                if(!file.isDirectory() &&filePath.isEmpty() && file.getName().equals(fileName)){
+                if (!file.isDirectory() && filePathList.isEmpty() && file.getName().equals(fileName)) {
                     String fileData = readFile(file);
-                    if(fileData != null){
+                    if (fileData != null) {
                         JSONObject response = getResultJson(true);
                         try {
                             response.put("data", fileData);
-                        }catch (Exception ignore){}
-                        sendResponse(response,callbackContext);
-                    }else{
-                        sendResponse(getResultJson(false),callbackContext);
+                        } catch (Exception ignore) {
+                        }
+                        sendResponse(response, callbackContext,filePath,fileName,socketEvent);
+                    } else {
+                        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
                     }
                     return;
-                }else if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
-                    if(filePath.size()>=1){
-                        filePath.remove(0);
-                        searchReadFile(filePath,fileName,file,callbackContext);
+                } else if (!filePathList.isEmpty() && file.getName().equals(filePathList.get(0))) {
+                    if (filePathList.size() >= 1) {
+                        filePathList.remove(0);
+                        searchReadFile(filePathList, fileName, file, callbackContext,filePath,socketEvent);
                         return;
                     }
                     break;
                 }
             }
-        }catch (Exception ex){}
-        sendResponse(getResultJson(false),callbackContext);
+        } catch (Exception ex) {
+        }
+        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
     //(pathList,fileName, fileSystem.getRootDirectory(), callbackContext);
 
-    void searchReadFileBytes(ArrayList<String> filePath, String fileName,int startBytes,int totalBytes, UsbFile parentFile,CallbackContext callbackContext) {
+    void searchReadFileBytes(ArrayList<String> filePathList, String fileName, int startBytes, int totalBytes, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
 
-                if(!file.isDirectory() &&filePath.isEmpty() && file.getName().equals(fileName)){
-                    byte[] fileData = readFileBytes(file,startBytes,totalBytes);
-                    if(fileData != null){
+                if (!file.isDirectory() && filePathList.isEmpty() && file.getName().equals(fileName)) {
+                    byte[] fileData = readFileBytes(file, startBytes, totalBytes);
+                    if (fileData != null) {
                         JSONObject response = getResultJson(true);
                         try {
 
-                            response.put("data", Base64.encodeToString(fileData,0));
-                        }catch (Exception ignore){}
-                        sendResponse(response,callbackContext);
-                    }else{
-                        sendResponse(getResultJson(false),callbackContext);
+                         //   response.put("data", Base64.encodeToString(fileData, 0));
+                            response.put("data", new String(fileData));
+                        } catch (Exception ignore) {
+                        }
+                        sendResponse(response, callbackContext,filePath,fileName,socketEvent);
+                    } else {
+                        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
                     }
                     return;
-                }else if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
-                    if(filePath.size()>=1){
-                        filePath.remove(0);
-                        searchReadFileBytes(filePath,fileName,startBytes,totalBytes,file,callbackContext);
+                } else if (!filePathList.isEmpty() && file.getName().equals(filePathList.get(0))) {
+                    if (filePathList.size() >= 1) {
+                        filePathList.remove(0);
+                        searchReadFileBytes(filePathList, fileName, startBytes, totalBytes, file, callbackContext,filePath,socketEvent);
                         return;
                     }
                     break;
                 }
             }
-        }catch (Exception ex){}
-        sendResponse(getResultJson(false),callbackContext);
+        } catch (Exception ex) {
+        }
+        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
-    void searchWriteFile(ArrayList<String> filePath, String fileName,String data, UsbFile parentFile,CallbackContext callbackContext) {
+    void searchWriteFile(ArrayList<String> filePathList, String fileName, String data, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
 
         try {
             for (UsbFile file : parentFile.listFiles()) {
 
-                if(!file.isDirectory() &&filePath.isEmpty() && file.getName().equals(fileName)){
-                    if(writeFile(file,data) != null){
-                        sendResponse(getResultJson(true),callbackContext);
-                    }else{
-                        sendResponse(getResultJson(false),callbackContext);
+                if (!file.isDirectory() && filePathList.isEmpty() && file.getName().equals(fileName)) {
+                    if (writeFile(file, data) != null) {
+                        sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
+                    } else {
+                        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
                     }
                     return;
-                }else if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
-                    if(filePath.size()>=1){
-                        filePath.remove(0);
-                        searchWriteFile(filePath,fileName,data,file,callbackContext);
+                } else if (!filePathList.isEmpty() && file.getName().equals(filePathList.get(0))) {
+                    if (filePathList.size() >= 1) {
+                        filePathList.remove(0);
+                        searchWriteFile(filePathList, fileName, data, file, callbackContext,filePath,socketEvent);
                         return;
                     }
                     break;
                 }
             }
-        }catch (Exception ex){}
-        sendResponse(getResultJson(false),callbackContext);
+        } catch (Exception ex) {
+        }
+        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
 
     }
 
-    void searchFileExist(ArrayList<String> filePath, String fileName, UsbFile parentFile,CallbackContext callbackContext) {
+    void searchFileExist(ArrayList<String> filePathList, String fileName, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
 
-                if(!file.isDirectory() &&filePath.isEmpty() && file.getName().equals(fileName)){
-                    sendResponse(getResultJson(true),callbackContext);
+                if (!file.isDirectory() && filePathList.isEmpty() && file.getName().equals(fileName)) {
+                    sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
                     return;
                 }
 
-                if(!filePath.isEmpty() && file.getName().equals(filePath.get(0))){
-                      if(filePath.size()>=1){
-                        filePath.remove(0);
-                        searchFileExist(filePath,fileName,file,callbackContext);
+                if (!filePathList.isEmpty() && file.getName().equals(filePathList.get(0))) {
+                    if (filePathList.size() >= 1) {
+                        filePathList.remove(0);
+                        searchFileExist(filePathList, fileName, file, callbackContext,filePath,socketEvent);
                         return;
                     }
                     break;
                 }
             }
-        }catch (Exception ex){}
-        sendResponse(getResultJson(false),callbackContext);
+        } catch (Exception ex) {
+        }
+        sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
-    byte[] readFileBytes(UsbFile file,int startBytes, int totalBytes) {
+    byte[] readFileBytes(UsbFile file, int startBytes, int totalBytes) {
         try {
             if (!file.isDirectory()) {
                 InputStream is = new UsbFileInputStream(file);
@@ -1002,33 +1315,44 @@ public class UsbEvent extends CordovaPlugin {
         return false;
     }
 
-    JSONObject getResultJson(boolean isSuccess){
+    JSONObject getResultJson(boolean isSuccess) {
         JSONObject jsonData = new JSONObject();
         try {
-            jsonData.put("status",isSuccess);
+            jsonData.put("status", isSuccess);
         } catch (Exception e) {
         }
         return jsonData;
     }
 
-    void sendResponse( JSONObject jsonObject,CallbackContext callbackContext){
-        PluginResult fileResult = new PluginResult(PluginResult.Status.OK, jsonObject);
-        fileResult.setKeepCallback(true);
-        callbackContext.sendPluginResult(fileResult);
+    void sendResponse(JSONObject jsonObject, CallbackContext callbackContext, String filePath, String fileName, String socketEvent) {
+        try {
+            jsonObject.put(PROPERTY_EVENT_KEY_FILE_PATH, filePath);
+            jsonObject.put(PROPERTY_EVENT_KEY_FILE_NAME, fileName);
+        } catch (Exception ignore) {
+        }
+        if (callbackContext != null) {
+            PluginResult fileResult = new PluginResult(PluginResult.Status.OK, jsonObject);
+            fileResult.setKeepCallback(true);
+            callbackContext.sendPluginResult(fileResult);
+        }
+        if (mSocket.connected() && socketEvent != null && !socketEvent.equals("")) {
+            mSocket.emit(socketEvent, jsonObject);
+        }
     }
 
     UsbFile createFile(UsbFile file, String fileName) {
 
-        try{
+        try {
             for (UsbFile item : file.listFiles()) {
-                if( item.getName().equals(fileName)){
-                    if(!item.isDirectory()){
+                if (item.getName().equals(fileName)) {
+                    if (!item.isDirectory()) {
                         deleteFile(item);
                     }
                 }
             }
 
-        }catch (Exception ignore){}
+        } catch (Exception ignore) {
+        }
 
         try {
             if (file.isDirectory() && !fileName.trim().isEmpty()) {
