@@ -23,6 +23,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -1409,18 +1410,29 @@ public class UsbEvent extends CordovaPlugin {
         try {
             if (!file.isDirectory()) {
                 InputStream is = new UsbFileInputStream(file);
-                byte[] buffer = new byte[totalBytes];
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                int bufferSize = 600;
+                int readCycleSize = totalBytes/bufferSize;
+                int reminderSize = totalBytes%bufferSize;
+
+                byte[] bufferCycle = new byte[bufferSize];
+                byte[] reminderBuffer = new byte[reminderSize];
+
                 is.skip(startBytes);
-                is.read(buffer,0,totalBytes);
-             /*   for (int i=0;i<buffer.length;i++) {
-                    Log.e(i+"==>>",buffer[i]+",");
-                    if(i==10){
-                        break;
-                    }
-                }*/
-                //is.read(buffer);
+
+                 while (readCycleSize>0){
+                        is.read(bufferCycle,0,bufferSize);
+                        bos.write(bufferCycle);
+                        bufferCycle = new byte[bufferSize];
+                       readCycleSize--;
+                   }
+                if(reminderSize>0){
+                    is.read(reminderBuffer,0,reminderSize);
+                    bos.write(reminderBuffer);
+                }
+
                 is.close();
-                return buffer;
+                return bos.toByteArray();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -1623,12 +1635,29 @@ public class UsbEvent extends CordovaPlugin {
             if (tmpFile.exists()) {
                 FileInputStream fis = new FileInputStream(tmpFile);
 
-                byte[] buffer = new byte[totalBytes];
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                int bufferSize = 600;
+                int readCycleSize = totalBytes/bufferSize;
+                int reminderSize = totalBytes%bufferSize;
+
+                byte[] bufferCycle = new byte[bufferSize];
+                byte[] reminderBuffer = new byte[reminderSize];
+
                 fis.skip(startBytes);
 
-                fis.read(buffer,0,totalBytes);
+                while (readCycleSize>0){
+                    fis.read(bufferCycle,0,bufferSize);
+                    bos.write(bufferCycle);
+                    bufferCycle = new byte[bufferSize];
+                    readCycleSize--;
+                }
+                if(reminderSize>0){
+                    fis.read(reminderBuffer,0,reminderSize);
+                    bos.write(reminderBuffer);
+                }
 
-                response.put("data", buffer);
+
+                response.put("data", bos.toByteArray());
 
                 sendResponse(response, callbackContext,filePath,fileName,socketEvent);
             }else{
