@@ -1333,7 +1333,7 @@ public class UsbEvent extends CordovaPlugin {
                         try {
 
                          //   response.put("data", Base64.encodeToString(fileData, 0));
-                            response.put("data", new String(fileData));
+                            response.put("data",fileData);
                         } catch (Exception ignore) {
                         }
                         sendResponse(response, callbackContext,filePath,fileName,socketEvent);
@@ -1628,7 +1628,7 @@ public class UsbEvent extends CordovaPlugin {
 
                 fis.read(buffer,0,totalBytes);
 
-                response.put("data", new String(buffer));
+                response.put("data", buffer);
 
                 sendResponse(response, callbackContext,filePath,fileName,socketEvent);
             }else{
