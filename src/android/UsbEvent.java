@@ -23,12 +23,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -107,6 +111,7 @@ public class UsbEvent extends CordovaPlugin {
     static final String PROPERTY_EVENT_KEY_FILE_PATH = "path";
     static final String PROPERTY_EVENT_KEY_DATA = "data";
     static final String PROPERTY_EVENT_KEY_FILE_NAME = "fileName";
+    static final String PROPERTY_EVENT_KEY_ISINTERNAL = "isInternal";
     static final String PROPERTY_EVENT_KEY_START_BYTES = "startBytes";
     static final String PROPERTY_EVENT_KEY_TOTAL_BYTES = "totalBytes";
 
@@ -182,27 +187,41 @@ public class UsbEvent extends CordovaPlugin {
                         String fileName = "";
                         String filePath = "";
                         String fileData = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_DATA)) {
                             fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
                         }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
+
+
+                        if(isInternal){
+                            createFileInInternalStorage(fileName, fileData, callbackContext, filePath, "");
+                        }else {
+
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchCreateFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), callbackContext, filePath, "");
                         }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchCreateFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), callbackContext,filePath,"");
+
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), callbackContext,"","","");
                     }
@@ -216,24 +235,34 @@ public class UsbEvent extends CordovaPlugin {
                         JSONObject option = args.optJSONObject(0);
                         String fileName = "";
                         String filePath = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(isInternal){
+                            deleteFileFromInternalStorage( fileName, callbackContext, filePath, "");
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchDeleteFile(pathList, fileName, fileSystem.getRootDirectory(), callbackContext, filePath, "");
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
-                        }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchDeleteFile(pathList, fileName, fileSystem.getRootDirectory(), callbackContext,filePath,"");
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), callbackContext,"","","");
                     }
@@ -248,24 +277,34 @@ public class UsbEvent extends CordovaPlugin {
                         JSONObject option = args.optJSONObject(0);
                         String fileName = "";
                         String filePath = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(isInternal){
+                            readFileFromInternalStorage( fileName, callbackContext, filePath, "");
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchReadFile(pathList, fileName, fileSystem.getRootDirectory(), callbackContext, filePath, "");
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
-                        }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchReadFile(pathList, fileName, fileSystem.getRootDirectory(), callbackContext,filePath,"");
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), callbackContext,"","","");
                     }
@@ -282,12 +321,13 @@ public class UsbEvent extends CordovaPlugin {
                         String filePath = "";
                         int startBytes = 0;
                         int totalBytes = 0;
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_START_BYTES)) {
                             startBytes = option.getInt(PROPERTY_EVENT_KEY_START_BYTES);
@@ -296,16 +336,26 @@ public class UsbEvent extends CordovaPlugin {
                             totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
                         }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
+
+                        if(isInternal){
+                            readFileBytesFromInternalStorage( fileName,startBytes, totalBytes, callbackContext, filePath, "");
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchReadFileBytes(pathList, fileName, startBytes, totalBytes, fileSystem.getRootDirectory(), callbackContext, filePath, "");
                         }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchReadFileBytes(pathList, fileName, startBytes, totalBytes, fileSystem.getRootDirectory(), callbackContext,filePath,"");
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), callbackContext,"","","");
                     }
@@ -321,27 +371,36 @@ public class UsbEvent extends CordovaPlugin {
                         String fileName = "";
                         String filePath = "";
                         String fileData = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_DATA)) {
                             fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
                         }
-
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
+                        if(isInternal){
+                            createFileInInternalStorage( fileName, fileData, callbackContext, filePath, "");
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchWriteFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), callbackContext, filePath, "");
                         }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchWriteFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), callbackContext,filePath,"");
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), callbackContext,"","","");
                     }
@@ -356,24 +415,33 @@ public class UsbEvent extends CordovaPlugin {
                         JSONObject option = args.optJSONObject(0);
                         String fileName = "";
                         String filePath = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
                         }
-
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
+                        if(isInternal){
+                            isFileExistInInternalStorage( fileName, callbackContext, filePath, "");
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchFileExist(pathList, fileName, fileSystem.getRootDirectory(), callbackContext, filePath, "");
                         }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchFileExist(pathList, fileName, fileSystem.getRootDirectory(), callbackContext,filePath,"");
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), callbackContext,"","","");
                     }
@@ -441,17 +509,28 @@ public class UsbEvent extends CordovaPlugin {
                         String fileName = "";
                         String filePath = "";
                         String fileData = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_DATA)) {
                             fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
                         }
 
+                        if (option.has(PROPERTY_EVENT_KEY_ISINTERNAL)) {
+                            try {
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            } catch (Exception ignore) {
+                            }
+                        }
+
+                        if(isInternal){
+                            createFileInInternalStorage(fileName, fileData, null, filePath, "");
+                        }else{
                         if (filePath.startsWith("/")) {
                             filePath = filePath.replaceFirst("/", "");
                         }
@@ -461,7 +540,8 @@ public class UsbEvent extends CordovaPlugin {
                         ArrayList<String> pathList = new ArrayList<String>();
                         if (!filePath.isEmpty())
                             pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchCreateFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_CREATEFILE);
+                        searchCreateFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), null, filePath, SOCKET_EVENT_CREATEFILE);
+                    }
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_CREATEFILE);
                     }
@@ -480,24 +560,34 @@ public class UsbEvent extends CordovaPlugin {
                         JSONObject option = (JSONObject) args[0];
                         String fileName = "";
                         String filePath = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(isInternal){
+                            deleteFileFromInternalStorage( fileName,  null, filePath, SOCKET_EVENT_DELETEFILE);
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchDeleteFile(pathList, fileName, fileSystem.getRootDirectory(), null, filePath, SOCKET_EVENT_DELETEFILE);
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
-                        }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchDeleteFile(pathList, fileName, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_DELETEFILE);
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_DELETEFILE);
                     }
@@ -518,24 +608,34 @@ public class UsbEvent extends CordovaPlugin {
                         JSONObject option = (JSONObject) args[0];
                         String fileName = "";
                         String filePath = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(isInternal){
+                            readFileFromInternalStorage( fileName,null, filePath, SOCKET_EVENT_READFILE);
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchReadFile(pathList, fileName, fileSystem.getRootDirectory(), null, filePath, SOCKET_EVENT_READFILE);
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
-                        }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchReadFile(pathList, fileName, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_READFILE);
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_READFILE);
                     }
@@ -556,12 +656,13 @@ public class UsbEvent extends CordovaPlugin {
                         String filePath = "";
                         int startBytes = 0;
                         int totalBytes = 0;
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_START_BYTES)) {
                             startBytes = option.getInt(PROPERTY_EVENT_KEY_START_BYTES);
@@ -569,17 +670,26 @@ public class UsbEvent extends CordovaPlugin {
                         if (option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
                             totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
                         }
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
+                        }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(isInternal){
+                            readFileBytesFromInternalStorage( fileName,startBytes, totalBytes, null, filePath, SOCKET_EVENT_READFILE_BYTES);
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchReadFileBytes(pathList, fileName, startBytes, totalBytes, fileSystem.getRootDirectory(), null, filePath, SOCKET_EVENT_READFILE_BYTES);
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
-                        }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchReadFileBytes(pathList, fileName, startBytes, totalBytes, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_READFILE_BYTES);
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_READFILE_BYTES);
                     }
@@ -600,27 +710,37 @@ public class UsbEvent extends CordovaPlugin {
                         String fileName = "";
                         String filePath = "";
                         String fileData = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_DATA)) {
                             fileData = option.getString(PROPERTY_EVENT_KEY_DATA);
                         }
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
+                        }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(isInternal){
+                            createFileInInternalStorage( fileName, fileData,  null, filePath, SOCKET_EVENT_WRITEFILE);
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchWriteFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), null, filePath, SOCKET_EVENT_WRITEFILE);
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
-                        }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchWriteFile(pathList, fileName, fileData, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_WRITEFILE);
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_WRITEFILE);
                     }
@@ -641,24 +761,34 @@ public class UsbEvent extends CordovaPlugin {
                         JSONObject option = (JSONObject) args[0];
                         String fileName = "";
                         String filePath = "";
+                        boolean isInternal = false;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
-                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME);
+                            fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
                         }
                         if (option.has(PROPERTY_EVENT_KEY_FILE_PATH)) {
-                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH);
+                            filePath = option.getString(PROPERTY_EVENT_KEY_FILE_PATH).trim();
+                        }
+                        if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
+                            try{
+                                isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
+                            }catch (Exception ignore){}
                         }
 
-                        if (filePath.startsWith("/")) {
-                            filePath = filePath.replaceFirst("/", "");
+                        if(isInternal){
+                                    isFileExistInInternalStorage( fileName, null, filePath, SOCKET_EVENT_FILEEXIST);
+                        }else {
+                            if (filePath.startsWith("/")) {
+                                filePath = filePath.replaceFirst("/", "");
+                            }
+                            if (filePath.endsWith("/")) {
+                                filePath = filePath.substring(0, filePath.length() - 1);
+                            }
+                            ArrayList<String> pathList = new ArrayList<String>();
+                            if (!filePath.isEmpty())
+                                pathList.addAll(Arrays.asList(filePath.trim().split("/")));
+                            searchFileExist(pathList, fileName, fileSystem.getRootDirectory(), null, filePath, SOCKET_EVENT_FILEEXIST);
                         }
-                        if (filePath.endsWith("/")) {
-                            filePath = filePath.substring(0, filePath.length() - 1);
-                        }
-                        ArrayList<String> pathList = new ArrayList<String>();
-                        if (!filePath.isEmpty())
-                            pathList.addAll(Arrays.asList(filePath.trim().split("/")));
-                        searchFileExist(pathList, fileName, fileSystem.getRootDirectory(), null,filePath,SOCKET_EVENT_FILEEXIST);
                     } catch (Exception ignore) {
                         sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_FILEEXIST);
                     }
@@ -1281,7 +1411,14 @@ public class UsbEvent extends CordovaPlugin {
                 InputStream is = new UsbFileInputStream(file);
                 byte[] buffer = new byte[totalBytes];
                 is.skip(startBytes);
-                is.read(buffer);
+                is.read(buffer,0,totalBytes);
+             /*   for (int i=0;i<buffer.length;i++) {
+                    Log.e(i+"==>>",buffer[i]+",");
+                    if(i==10){
+                        break;
+                    }
+                }*/
+                //is.read(buffer);
                 is.close();
                 return buffer;
             }
@@ -1376,5 +1513,130 @@ public class UsbEvent extends CordovaPlugin {
         return null;
     }
 
+    void createFileInInternalStorage(String fileName, String data, CallbackContext callbackContext,String filePath,String socketEvent) {
+        try {
+            if (filePath.startsWith("/")) {
+                filePath = filePath.replaceFirst("/", "");
+            }
+            if (!filePath.endsWith("/")) {
+                filePath = filePath + "/";
+            }
+            File tmpDir = new File(appContext.getCacheDir() + filePath);
+            if(!tmpDir.exists()){
+                tmpDir.mkdirs();
+            }
+
+
+            File tmpFile = new File(appContext.getCacheDir() + filePath + fileName);
+            if (tmpFile.exists()) {
+                tmpFile.delete();
+            }else{
+
+            }
+
+            tmpFile.createNewFile();
+            FileOutputStream fos = new FileOutputStream(tmpFile);
+            fos.write(data.getBytes(StandardCharsets.UTF_8));
+            sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
+        }catch (Exception ignore){
+            sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+        }
+
+    }
+
+
+    void readFileFromInternalStorage(String fileName, CallbackContext callbackContext,String filePath,String socketEvent) {
+        try {
+            if (filePath.startsWith("/")) {
+                filePath = filePath.replaceFirst("/", "");
+            }
+            if (!filePath.endsWith("/")) {
+                filePath = filePath + "/";
+            }
+            File tmpFile = new File(appContext.getCacheDir() + filePath + fileName);
+            JSONObject response = getResultJson(true);
+            if (tmpFile.exists()) {
+                FileInputStream fis = new FileInputStream(tmpFile);
+                String fileData = convertStreamToString(fis);
+                response.put("data", fileData);
+
+                sendResponse(response, callbackContext,filePath,fileName,socketEvent);
+            }else{
+                sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+            }
+        }catch (Exception ignore){
+            sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+        }
+    }
+
+
+    void deleteFileFromInternalStorage(String fileName, CallbackContext callbackContext,String filePath,String socketEvent) {
+        try {
+            if (filePath.startsWith("/")) {
+                filePath = filePath.replaceFirst("/", "");
+            }
+            if (!filePath.endsWith("/")) {
+                filePath = filePath + "/";
+            }
+            File tmpFile = new File(appContext.getCacheDir() + filePath + fileName);
+            if (tmpFile.exists()) {
+                tmpFile.delete();
+            }
+
+            sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
+        }catch (Exception ignore){
+            sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+        }
+    }
+
+    void isFileExistInInternalStorage(String fileName, CallbackContext callbackContext,String filePath,String socketEvent) {
+        try {
+            if (filePath.startsWith("/")) {
+                filePath = filePath.replaceFirst("/", "");
+            }
+            if (!filePath.endsWith("/")) {
+                filePath = filePath + "/";
+            }
+            File tmpFile = new File(appContext.getCacheDir() + filePath + fileName);
+            if (tmpFile.exists()) {
+                sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
+            }else{
+                sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+            }
+
+
+        }catch (Exception ignore){
+            sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+        }
+    }
+
+    void readFileBytesFromInternalStorage(String fileName,int startBytes,int totalBytes, CallbackContext callbackContext,String filePath,String socketEvent){
+        try {
+            if (filePath.startsWith("/")) {
+                filePath = filePath.replaceFirst("/", "");
+            }
+            if (!filePath.endsWith("/")) {
+                filePath = filePath + "/";
+            }
+            File tmpFile = new File(appContext.getCacheDir() + filePath + fileName);
+            JSONObject response = getResultJson(true);
+            if (tmpFile.exists()) {
+                FileInputStream fis = new FileInputStream(tmpFile);
+
+                byte[] buffer = new byte[totalBytes];
+                fis.skip(startBytes);
+
+                fis.read(buffer,0,totalBytes);
+
+                response.put("data", new String(buffer));
+
+                sendResponse(response, callbackContext,filePath,fileName,socketEvent);
+            }else{
+                sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+            }
+        }catch (Exception ignore){
+            sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+        }
+    }
 
 }
