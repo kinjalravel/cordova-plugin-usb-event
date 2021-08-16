@@ -287,6 +287,7 @@ public class UsbEvent extends CordovaPlugin {
                         String fileName = "";
                         String filePath = "";
                         boolean isInternal = false;
+                        int totalBytes = 0;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
                             fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
@@ -298,6 +299,9 @@ public class UsbEvent extends CordovaPlugin {
                             try{
                                 isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
                             }catch (Exception ignore){}
+                        }
+                        if (option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
+                            totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
                         }
 
                         if(isInternal){
@@ -341,14 +345,15 @@ public class UsbEvent extends CordovaPlugin {
                         if (option.has(PROPERTY_EVENT_KEY_START_BYTES)) {
                             startBytes = option.getInt(PROPERTY_EVENT_KEY_START_BYTES);
                         }
-                        if (option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
-                            totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
-                        }
 
                         if(option.has(PROPERTY_EVENT_KEY_ISINTERNAL)){
                             try{
                                 isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
                             }catch (Exception ignore){}
+                        }
+
+                        if (option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
+                            totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
                         }
 
                         if(isInternal){
@@ -381,6 +386,7 @@ public class UsbEvent extends CordovaPlugin {
                         String filePath = "";
                         String fileData = "";
                         boolean isInternal = false;
+                        int totalBytes = 0;
 
                         if (option.has(PROPERTY_EVENT_KEY_FILE_NAME)) {
                             fileName = option.getString(PROPERTY_EVENT_KEY_FILE_NAME).trim();
@@ -396,6 +402,10 @@ public class UsbEvent extends CordovaPlugin {
                                 isInternal = option.getBoolean(PROPERTY_EVENT_KEY_ISINTERNAL);
                             }catch (Exception ignore){}
                         }
+                        if (option.has(PROPERTY_EVENT_KEY_TOTAL_BYTES)) {
+                            totalBytes = option.getInt(PROPERTY_EVENT_KEY_TOTAL_BYTES);
+                        }
+
                         if(isInternal){
                             createFileInInternalStorage( fileName, fileData, callbackContext, filePath, "");
                         }else {
@@ -868,7 +878,7 @@ public class UsbEvent extends CordovaPlugin {
                         if(totalLength <=0){
                             sendResponse(getResultJson(false), null,"","",SOCKET_EVENT_WRITEFILE);
                         }
-
+                        Log.e("Data===>>","startPosition====>>"+startPosition+"        totalLength=>>"+totalLength);
                         if(isInternal){
                             insertFileDataInInternalStorage( fileName, fileData,startPosition,totalLength, null, filePath, SOCKET_EVENT_INSERTINTOFILE);
                         }else {
@@ -1346,7 +1356,9 @@ public class UsbEvent extends CordovaPlugin {
         return fileData;
     }
 
-
+    /**
+     * This function is doing search path for create file from USB
+     */
     void searchCreateFile(ArrayList<String> filePathList, String fileName, String data, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             if (filePathList.isEmpty()) {
@@ -1404,6 +1416,9 @@ public class UsbEvent extends CordovaPlugin {
         sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
+    /**
+     * This function is doing search path for delete file from USB
+     */
     void searchDeleteFile(ArrayList<String> filePathList, String fileName, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
@@ -1431,6 +1446,9 @@ public class UsbEvent extends CordovaPlugin {
         sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
+    /**
+     * This function is doing search path for read file from USB
+     */
     void searchReadFile(ArrayList<String> filePathList, String fileName, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
@@ -1464,6 +1482,9 @@ public class UsbEvent extends CordovaPlugin {
 
     //(pathList,fileName, fileSystem.getRootDirectory(), callbackContext);
 
+    /**
+     * This function is doing search path for read file bytes from USB
+     */
     void searchReadFileBytes(ArrayList<String> filePathList, String fileName, int startBytes, int totalBytes, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
@@ -1497,6 +1518,9 @@ public class UsbEvent extends CordovaPlugin {
         sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
+    /**
+     * This function is doing search path for write file in USB
+     */
     void searchWriteFile(ArrayList<String> filePathList, String fileName, String data, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
 
         try {
@@ -1524,7 +1548,9 @@ public class UsbEvent extends CordovaPlugin {
 
     }
 
-
+    /**
+     * This function is doing search path for insert data into file in USB
+     */
     void searchInsertDataIntoFile(ArrayList<String> filePathList, String fileName, String data,int startPosition,int totalLength, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
@@ -1551,6 +1577,9 @@ public class UsbEvent extends CordovaPlugin {
 
     }
 
+    /**
+     * This function is doing search path for search file from USB
+     */
     void searchFileExist(ArrayList<String> filePathList, String fileName, UsbFile parentFile, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             for (UsbFile file : parentFile.listFiles()) {
@@ -1574,6 +1603,9 @@ public class UsbEvent extends CordovaPlugin {
         sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
     }
 
+    /**
+     * This function is reading number of bytes from file
+     */
     byte[] readFileBytes(UsbFile file, int startBytes, int totalBytes) {
         try {
             if (!file.isDirectory()) {
@@ -1608,6 +1640,9 @@ public class UsbEvent extends CordovaPlugin {
         return null;
     }
 
+    /**
+     * This function is doing read file data file from USB
+     */
     String readFile(UsbFile file) {
         try {
             if (!file.isDirectory()) {
@@ -1621,6 +1656,9 @@ public class UsbEvent extends CordovaPlugin {
         return null;
     }
 
+    /**
+     * This function is doing delete file from USB
+     */
     boolean deleteFile(UsbFile file) {
         try {
             if (!file.isDirectory()) {
@@ -1632,6 +1670,9 @@ public class UsbEvent extends CordovaPlugin {
         return false;
     }
 
+    /**
+     * This function is doing generating response json data
+     */
     JSONObject getResultJson(boolean isSuccess) {
         JSONObject jsonData = new JSONObject();
         try {
@@ -1641,6 +1682,9 @@ public class UsbEvent extends CordovaPlugin {
         return jsonData;
     }
 
+    /**
+     * This function is doing send response callback
+     */
     void sendResponse(JSONObject jsonObject, CallbackContext callbackContext, String filePath, String fileName, String socketEvent) {
         try {
             jsonObject.put(PROPERTY_EVENT_KEY_FILE_PATH, filePath);
@@ -1657,6 +1701,9 @@ public class UsbEvent extends CordovaPlugin {
         }
     }
 
+    /**
+     * This function is doing creating new file into USB
+     */
     UsbFile createFile(UsbFile file, String fileName) {
 
         try {
@@ -1680,6 +1727,9 @@ public class UsbEvent extends CordovaPlugin {
         return null;
     }
 
+    /**
+     * This function is doing writing data  into file in USB
+     */
     UsbFile writeFile(UsbFile file, String fileData) {
         try {
             if (!file.isDirectory()) {
@@ -1692,11 +1742,13 @@ public class UsbEvent extends CordovaPlugin {
         }
         return null;
     }
-    
+
+    /**
+     * This function is doing inserting data into file at specific position in USB
+     */
     UsbFile insertDataIntoFile(UsbFile file, String fileData,int startPosition, int totalLength) {
         try {
             if (!file.isDirectory()) {
-                
                 file.write(startPosition, ByteBuffer.wrap(fileData.getBytes()));
                 file.close();
                 return file;
@@ -1706,7 +1758,10 @@ public class UsbEvent extends CordovaPlugin {
         }
         return null;
     }
-    
+
+    /**
+     * This function is doing creating new file in internal storage
+     */
     void createFileInInternalStorage(String fileName, String data, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             if (filePath.startsWith("/")) {
@@ -1740,6 +1795,9 @@ public class UsbEvent extends CordovaPlugin {
     }
 
 
+    /**
+     * This function is doing reading file from internal storage
+     */
     void readFileFromInternalStorage(String fileName, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             if (filePath.startsWith("/")) {
@@ -1764,7 +1822,9 @@ public class UsbEvent extends CordovaPlugin {
         }
     }
 
-
+    /**
+     * This function is doing deleting file from internal storage
+     */
     void deleteFileFromInternalStorage(String fileName, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             if (filePath.startsWith("/")) {
@@ -1784,6 +1844,9 @@ public class UsbEvent extends CordovaPlugin {
         }
     }
 
+    /**
+     * This function is doing check file is exist or not in internal storage
+     */
     void isFileExistInInternalStorage(String fileName, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
             if (filePath.startsWith("/")) {
@@ -1805,6 +1868,9 @@ public class UsbEvent extends CordovaPlugin {
         }
     }
 
+    /**
+     * This function is doing read file bytes data from specific position  from internal storage
+     */
     void readFileBytesFromInternalStorage(String fileName,int startBytes,int totalBytes, CallbackContext callbackContext,String filePath,String socketEvent){
         try {
             if (filePath.startsWith("/")) {
@@ -1851,9 +1917,12 @@ public class UsbEvent extends CordovaPlugin {
         }
     }
 
-
+    /**
+     * This function is doing inserting data into file at specific position in internal storage
+     */
     void insertFileDataInInternalStorage(String fileName, String data,int startPosition,int totalLength, CallbackContext callbackContext,String filePath,String socketEvent) {
         try {
+
             if (filePath.startsWith("/")) {
                 filePath = filePath.replaceFirst("/", "");
             }
@@ -1873,12 +1942,13 @@ public class UsbEvent extends CordovaPlugin {
                 return;
             }
 
-            RandomAccessFile raf ;
+
 
             try {
-                raf = new RandomAccessFile(tmpFile, "rw");
+                RandomAccessFile raf = new RandomAccessFile(tmpFile, "rw");
                 raf.seek(startPosition);
                 raf.write(data.getBytes(StandardCharsets.UTF_8));
+                raf.close();
                 sendResponse(getResultJson(true), callbackContext,filePath,fileName,socketEvent);
             }
             catch (Exception ioe) {
