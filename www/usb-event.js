@@ -72,4 +72,12 @@ var exec = require('cordova/exec');
      exec(success, error, 'UsbEvent', 'fileExistFileEventCallback', [options]);
  };
 
+ 
+ /**
+ * insert data into file callback.
+ */
+ exports.insertIntoFileEventCallback = function(options, success, error) {
+    exec(success, error, 'UsbEvent', 'insertIntoFileEventCallback', [options]);
+};
+ 
 });
