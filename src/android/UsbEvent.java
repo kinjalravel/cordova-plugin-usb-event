@@ -1612,6 +1612,16 @@ public class UsbEvent extends CordovaPlugin {
                 InputStream is = new UsbFileInputStream(file);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 int bufferSize = 600;
+
+                if(file.getLength() < (long) (startBytes+totalBytes)){
+
+                    totalBytes = (int)(file.getLength() -  (long)startBytes);
+                }
+
+                if(totalBytes<=0){
+                    return null;
+                }
+
                 int readCycleSize = totalBytes/bufferSize;
                 int reminderSize = totalBytes%bufferSize;
 
@@ -1885,6 +1895,17 @@ public class UsbEvent extends CordovaPlugin {
                 FileInputStream fis = new FileInputStream(tmpFile);
 
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+                if(tmpFile.length() < (long) (startBytes+totalBytes)){
+
+                    totalBytes = (int)(tmpFile.length() -  (long)startBytes);
+                }
+
+                if(totalBytes<=0){
+                    sendResponse(getResultJson(false), callbackContext,filePath,fileName,socketEvent);
+                    return ;
+                }
+
                 int bufferSize = 600;
                 int readCycleSize = totalBytes/bufferSize;
                 int reminderSize = totalBytes%bufferSize;
